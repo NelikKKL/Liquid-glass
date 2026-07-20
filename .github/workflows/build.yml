@@ -66,7 +66,6 @@ jobs:
           path: |
             pkg
             pkg-bundler
-            js
             www
             README.md
           if-no-files-found: error
@@ -113,7 +112,6 @@ jobs:
         run: |
           cp -r dist/pkg-bundler/* dist/pkg/ 2>/dev/null || true
           cp package.json dist/
-          cp -r dist/js dist/js || true
           cd dist
           npm publish --access public
         env:
