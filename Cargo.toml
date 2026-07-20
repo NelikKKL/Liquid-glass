@@ -53,3 +53,13 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+
+# wasm-pack по умолчанию сам запускает встроенный (старый) wasm-opt, который
+# не понимает bulk-memory/non-trapping-float инструкции современного rustc
+# и падает на этапе валидации. Отключаем — оптимизацию делаем отдельным
+# шагом в CI явным вызовом wasm-opt нужной версии.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[package.metadata.wasm-pack.profile.profiling]
+wasm-opt = false

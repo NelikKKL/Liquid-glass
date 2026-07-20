@@ -54,8 +54,10 @@ jobs:
         continue-on-error: true
         run: |
           npm install -g wasm-opt
-          wasm-opt -Oz -o pkg/liquid_glass_bg.wasm pkg/liquid_glass_bg.wasm
-          wasm-opt -Oz -o pkg-bundler/liquid_glass_bg.wasm pkg-bundler/liquid_glass_bg.wasm
+          wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int \
+            -o pkg/liquid_glass_bg.wasm pkg/liquid_glass_bg.wasm
+          wasm-opt -Oz --enable-bulk-memory --enable-nontrapping-float-to-int \
+            -o pkg-bundler/liquid_glass_bg.wasm pkg-bundler/liquid_glass_bg.wasm
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
