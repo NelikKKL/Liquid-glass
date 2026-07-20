@@ -1,0 +1,119 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build wasm package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust (stable, wasm32 target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry & target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: "latest"
+
+      - name: Lint (fmt + clippy, non-blocking)
+        continue-on-error: true
+        run: |
+          rustup component add rustfmt clippy
+          cargo fmt --all -- --check
+          cargo clippy --target wasm32-unknown-unknown -- -D warnings
+
+      - name: Build (web target, release)
+        run: wasm-pack build --target web --release --out-dir pkg
+
+      - name: Build (bundler target, release, for npm/webpack/vite)
+        run: wasm-pack build --target bundler --release --out-dir pkg-bundler
+
+      - name: Optimize wasm binary size (wasm-opt, optional)
+        continue-on-error: true
+        run: |
+          npm install -g wasm-opt
+          wasm-opt -Oz -o pkg/liquid_glass_bg.wasm pkg/liquid_glass_bg.wasm
+          wasm-opt -Oz -o pkg-bundler/liquid_glass_bg.wasm pkg-bundler/liquid_glass_bg.wasm
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquid-glass-pkg
+          path: |
+            pkg
+            pkg-bundler
+            js
+            www
+            README.md
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release & publish to npm
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: liquid-glass-pkg
+          path: dist
+
+      - name: Zip release assets
+        run: |
+          cd dist
+          zip -r ../liquid-glass-${{ github.ref_name }}.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: liquid-glass-${{ github.ref_name }}.zip
+          generate_release_notes: true
+
+      - name: Setup Node for npm publish
+        if: ${{ env.NPM_TOKEN != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to npm
+        if: ${{ env.NPM_TOKEN != '' }}
+        run: |
+          cp -r dist/pkg-bundler/* dist/pkg/ 2>/dev/null || true
+          cp package.json dist/
+          cp -r dist/js dist/js || true
+          cd dist
+          npm publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

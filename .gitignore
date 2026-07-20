@@ -1,0 +1,6 @@
+/target
+/pkg
+/pkg-bundler
+node_modules
+*.log
+.DS_Store

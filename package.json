@@ -1,0 +1,26 @@
+{
+  "name": "liquid-glass-web",
+  "version": "0.1.0",
+  "description": "Apple-style Liquid Glass UI effect for the web, rendered via WebGL2 (Rust/WASM core)",
+  "type": "module",
+  "main": "js/liquid-glass.js",
+  "module": "js/liquid-glass.js",
+  "files": [
+    "pkg",
+    "js",
+    "README.md"
+  ],
+  "keywords": [
+    "liquid-glass",
+    "glassmorphism",
+    "webgl",
+    "wasm",
+    "rust",
+    "ui-effect"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/liquid-glass"
+  }
+}
