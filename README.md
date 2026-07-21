@@ -113,8 +113,5 @@ npx serve .
 liquid-glass/
 ├── src/lib.rs              # Rust/WebGL2 ядро эффекта
 ├── Cargo.toml
-├── js/liquid-glass.js       # тонкая JS-обёртка с публичным API
-├── www/index.html           # демо-страница
-├── pkg/                     # генерируется wasm-pack (в git не хранится)
 └── .github/workflows/build.yml
 ```
